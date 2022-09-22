@@ -1,0 +1,70 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.github.scipio-am</groupId>
+    <artifactId>scipio-utils-2</artifactId>
+    <version>${reversion}</version>
+    <modules>
+        <module>core</module>
+    </modules>
+    <packaging>pom</packaging>
+
+    <name>scipio-utils-2</name>
+
+    <properties>
+        <!--====================== 基础设定 ======================-->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <reversion>2.0.0</reversion>
+
+        <!--====================== 辅助性基础依赖 ======================-->
+        <junit.version>5.9.0</junit.version>
+        <lombok.version>1.18.24</lombok.version>
+
+        <!--====================== 工具库 ======================-->
+        <openjsse.version>1.1.10</openjsse.version>
+    </properties>
+
+    <dependencyManagement>
+        <!--======================================== 辅助性基础依赖 ========================================-->
+        <dependencies>
+            <!--junit-->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <!--======================================== 工具库 ========================================-->
+            <!-- OpenJSSE (为了JDK8时支持TLSv1.3) -->
+            <dependency>
+                <groupId>org.openjsse</groupId>
+                <artifactId>openjsse</artifactId>
+                <version>${openjsse.version}</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+        </dependency>
+        <!-- lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

@@ -1,7 +1,6 @@
 package com.github.scipioutils.core.net.http.def;
 
 import com.github.scipioutils.core.StringUtils;
-import com.github.scipioutils.core.net.http.AllTrustX509TrustManager;
 import com.github.scipioutils.core.net.http.HttpUtils;
 import com.github.scipioutils.core.net.http.listener.*;
 import lombok.AccessLevel;
@@ -10,9 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import javax.net.ssl.TrustManager;
 import java.io.File;
-import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,12 +76,12 @@ public class Request {
     private String userAgent;
 
     /**
-     * 代理
-     */
-    private Proxy proxy;
-
-    /**
-     * TLS协议，JDK11以下默认为TLSv1.2
+     * TLS协议
+     * <p>
+     * 注：Java11以下底层只支持到TLSv1.2，需要加入OpenJSSE库以扩展对TLSv1.3的支持
+     * </p>
+     *
+     * @see <a href="https://github.com/openjsse/openjsse">OpenJSSE</a>
      */
     private String tlsProtocol;
 
@@ -127,7 +124,7 @@ public class Request {
     private int fileBufferSize = 4096;
 
     /**
-     * 下载文件的全路径，如果不为空则代表需要下载
+     * 下载文件的全路径
      */
     private String downloadFilePath;
 
@@ -138,25 +135,32 @@ public class Request {
 
     //========================================== ↓↓↓↓↓↓ 回调相关 ↓↓↓↓↓↓ ==========================================
 
-    protected ResponseSuccessHandler responseSuccessHandler;
-
-    protected ResponseFailureHandler responseFailureHandler;
-
-    protected DownloadListener downloadListener;
-
-    protected UploadListener uploadListener;
+    /**
+     * 连接上服务器并返回2xx响应码时的回调
+     */
+    private ResponseSuccessListener responseSuccessListener;
 
     /**
-     * SSLContext初始化者
+     * 连接上服务器并返回非2xx响应码时的回调
      */
-    protected SSLContextInitializer sslContextInitializer;
+    private ResponseFailureListener responseFailureListener;
 
     /**
-     * 信任管理器（决定了信任哪些SSL证书）
+     * 下载监听器
      */
-    protected TrustManager[] trustManagers = new TrustManager[]{new AllTrustX509TrustManager()};
+    private DownloadListener downloadListener;
 
-    //========================================== ↓↓↓↓↓↓ 方法 ↓↓↓↓↓↓ ==========================================
+    /**
+     * 上传监听器
+     */
+    private UploadListener uploadListener;
+
+    //========================================== ↓↓↓↓↓↓ 部分getter/setter方法 ↓↓↓↓↓↓ ==========================================
+
+    public Request setDefaultUserAgent() {
+        this.userAgent = PresetUserAgent.getDefault().val;
+        return this;
+    }
 
     public Request setData(Map<String, String> formData) {
         this.formData = formData;
@@ -168,8 +172,21 @@ public class Request {
         return this;
     }
 
+    public Request setXmlData(String xmlData) {
+        this.strData = xmlData;
+        this.requestDataMode = RequestDataMode.XML;
+        return this;
+    }
+
+    public Request setJsonData(String jsonData) {
+        this.strData = jsonData;
+        this.requestDataMode = RequestDataMode.JSON;
+        return this;
+    }
+
     public Request setUploadFiles(Map<String, File> uploadFiles) {
         this.uploadFiles = uploadFiles;
+        this.requestDataMode = RequestDataMode.UPLOAD_FILE;
         return this;
     }
 
@@ -178,6 +195,7 @@ public class Request {
             this.uploadFiles = new HashMap<>();
         }
         uploadFiles.put(fileKey, file);
+        this.requestDataMode = RequestDataMode.UPLOAD_FILE;
         return this;
     }
 
@@ -211,6 +229,24 @@ public class Request {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public Request addHeader(String key, String value) {
+        if (StringUtils.isBlank(key)) {
+            return this;
+        }
+        if (headers == null) {
+            headers = new HashMap<>();
+        }
+        headers.put(key, value);
+        return this;
+    }
+
+    public String getHeader(String key) {
+        if (headers == null) {
+            return null;
+        }
+        return headers.get(key);
     }
 
 }

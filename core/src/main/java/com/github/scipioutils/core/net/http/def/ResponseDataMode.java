@@ -9,7 +9,7 @@ package com.github.scipioutils.core.net.http.def;
 public enum ResponseDataMode {
 
     /**
-     * 默认按
+     * 默认处理（读取响应体并保存字节数据）
      */
     DEFAULT,
 
@@ -26,6 +26,6 @@ public enum ResponseDataMode {
     /**
      * 直接返回InputStream对象
      */
-    STREAM_ONLY
+    STREAM
 
 }

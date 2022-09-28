@@ -1,5 +1,9 @@
 package com.github.scipioutils.core.net.mime;
 
+import com.github.scipioutils.core.StringUtils;
+
+import java.util.List;
+
 /**
  * MIME类型
  *
@@ -14,11 +18,9 @@ public interface MimeType {
     String getTemplate();
 
     /**
-     * TODO 获取MIME对应的文件扩展名 (计划用爬虫抓取对照表并处理)
+     * 获取MIME对应的文件扩展名
      */
-    default String getFileExtension() {
-        return null;
-    }
+    String getFileExtension();
 
     /**
      * 获取Mime类型主类型
@@ -37,6 +39,41 @@ public interface MimeType {
 
     default String getContentType() {
         return getContentType("utf-8");
+    }
+
+    /**
+     * 根据文件扩展名获取对应的ContentType
+     */
+    static String getContentTypeByFileExtension(String fileExtension) {
+        if (StringUtils.isBlank(fileExtension)) {
+            throw new IllegalArgumentException("fileExtension can not be blank");
+        }
+        if (!fileExtension.startsWith("\\.")) {
+            fileExtension = ("." + fileExtension);
+        }
+        List<MimeType> mimeTypes = MimeMainType.getAllMimeTypes();
+        for (MimeType mimeType : mimeTypes) {
+            if (fileExtension.equals(mimeType.getFileExtension())) {
+                return mimeType.getContentType();
+            }
+        }
+        return "application/octet-stream";
+    }
+
+    /**
+     * 根据ContentType获取对应的文件扩展名
+     */
+    static String getFileExtensionByContentType(String contentType) {
+        if (StringUtils.isBlank(contentType)) {
+            throw new IllegalArgumentException("contentType can not be blank");
+        }
+        List<MimeType> mimeTypes = MimeMainType.getAllMimeTypes();
+        for (MimeType mimeType : mimeTypes) {
+            if (contentType.equals(mimeType.getContentType())) {
+                return mimeType.getFileExtension();
+            }
+        }
+        return null;
     }
 
 }

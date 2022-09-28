@@ -15,7 +15,7 @@ public enum RequestDataMode {
     /**
      * 没有要提交的数据
      */
-    NONE(null),
+    NONE(""),
 
     /**
      * form表单提交方式(比如x=1&y=2...)

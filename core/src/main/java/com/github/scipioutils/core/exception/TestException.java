@@ -3,7 +3,7 @@ package com.github.scipioutils.core.exception;
 /**
  * @since 2022/9/21
  */
-public class TestException extends RuntimeException{
+public class TestException extends ScipioUtilException{
 
     public TestException(String message) {
         super(message);

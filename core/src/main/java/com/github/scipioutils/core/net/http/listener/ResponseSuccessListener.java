@@ -10,7 +10,7 @@ import com.github.scipioutils.core.net.http.def.Response;
  * @since 1.0.1-p1
  */
 @FunctionalInterface
-public interface ResponseSuccessHandler {
+public interface ResponseSuccessListener {
 
     /**
      * 成功响应后的处理（2xx响应码）

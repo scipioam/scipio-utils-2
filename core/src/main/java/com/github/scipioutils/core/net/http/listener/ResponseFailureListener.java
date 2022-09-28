@@ -10,7 +10,7 @@ import com.github.scipioutils.core.net.http.def.Response;
  * @since 1.0.1-p1
  */
 @FunctionalInterface
-public interface ResponseFailureHandler {
+public interface ResponseFailureListener {
 
     /**
      * 失败响应后的处理（非2xx响应码）

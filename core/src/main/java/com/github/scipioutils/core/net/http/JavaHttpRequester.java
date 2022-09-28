@@ -1,20 +1,19 @@
 package com.github.scipioutils.core.net.http;
 
 import com.github.scipioutils.core.StringUtils;
-import com.github.scipioutils.core.io.stream.InputStreamWrapper;
-import com.github.scipioutils.core.io.stream.StreamParser;
 import com.github.scipioutils.core.net.http.def.*;
+import com.github.scipioutils.core.net.http.listener.ExecuteErrorHandler;
+import com.github.scipioutils.core.net.http.listener.RequestBodyHandler;
+import com.github.scipioutils.core.net.http.listener.ResponseBodyHandler;
 import com.github.scipioutils.core.net.http.listener.SSLContextInitializer;
 import lombok.Data;
-import lombok.experimental.Accessors;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.URL;
+import java.net.*;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -25,58 +24,179 @@ import java.util.regex.Pattern;
  * create date: 2022/9/22
  */
 @Data
-@Accessors(chain = true)
 public class JavaHttpRequester implements HttpRequester {
 
-    //========================================== ↓↓↓↓↓↓ API ↓↓↓↓↓↓ ==========================================
+    private Proxy proxy;
 
-    //========================================== ↓↓↓↓↓↓ 主要方法 ↓↓↓↓↓↓ ==========================================
+    /**
+     * 发生异常时的回调
+     */
+    private ExecuteErrorHandler executeErrorHandler;
 
-    public Response doRequest(Request request) throws Exception {
-        //确定contentType
-        String contentType = determineContentType(request);
-        //准备最终url
-        String urlPath = prepareUrl(request);
-        URL url = new URL(urlPath);
-        //打开连接
-        HttpURLConnection conn = (HttpURLConnection) (request.getProxy() == null ? url.openConnection() : url.openConnection(request.getProxy()));
-        //公共的请求头设置
-        setCommonConnOptions(conn, contentType, request);
-        //如果是https必要的处理
-        if (HttpUtils.isHttpsProtocol(url)) {
-            HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
-            httpsConn.setSSLSocketFactory(createSSLSocketFactory(request));//设置SSL
-        }
-        //开始输出请求内容
-        outputRequestContent(conn, request);
-        //接收响应
-        int responseCode = conn.getResponseCode();//获取返回的状态码，此处会阻塞直到有响应或超时
-        Response response = new Response();
-        response.setRequestUrl(urlPath);
-        response.setHttpMethod(request.getHttpMethod());
-        response.setResponseCode(responseCode);
-        response.setAcceptCharset(request.getAcceptCharset());
-        response.setContentEncoding(conn.getContentEncoding());
-        response.setContentLength(conn.getContentLengthLong());
-        response.setContentType(conn.getContentType());
-        response.setHeaders(HttpUtils.transformURLConnHeaders(conn.getHeaderFields()));
-        response.setConnObj(conn);
-        if (responseCode >= 200 && responseCode < 300) {
-            handleResponseContent(conn, response, request);
-            //成功后的响应回调
-            if (request.getResponseSuccessHandler() != null) {
-                request.getResponseSuccessHandler().handle(response, request);
-            }
+    /**
+     * 输出请求体的实现
+     */
+    private RequestBodyHandler requestBodyHandler = RequestBodyHandler.DEFAULT;
+
+    /**
+     * 接收响应体的实现
+     */
+    private ResponseBodyHandler responseBodyHandler = ResponseBodyHandler.DEFAULT;
+
+    /**
+     * SSLContext初始化
+     */
+    private SSLContextInitializer sslContextInitializer = SSLContextInitializer.DEFAULT;
+
+    /**
+     * 信任管理器（决定了信任哪些SSL证书）
+     * <p>注：默认信任全部SSL证书</p>
+     */
+    private TrustManager[] trustManagers = new TrustManager[]{new AllTrustX509TrustManager()};
+
+    //========================================== ↓↓↓↓↓↓ Other APIs ↓↓↓↓↓↓ ==========================================
+
+    /**
+     * 关闭代理
+     *
+     * @param isGlobalSet 是否全局设置
+     */
+    public JavaHttpRequester turnOffProxy(boolean isGlobalSet) {
+        if (isGlobalSet) {
+            System.setProperty("http.proxySet", "false");
+            System.getProperties().remove("http.proxyHost");
+            System.getProperties().remove("http.proxyPort");
+            System.getProperties().remove("https.proxyHost");
+            System.getProperties().remove("https.proxyPort");
         } else {
-            //失败后的响应回调
-            if (request.getResponseFailureHandler() != null) {
-                request.getResponseFailureHandler().handle(response, request);
-            }
+            proxy = null;
         }
-        return response;
+        return this;
     }
 
-    //========================================== ↓↓↓↓↓↓ 内部方法 ↓↓↓↓↓↓ ==========================================
+    public JavaHttpRequester turnOffProxy() {
+        return turnOffProxy(false);
+    }
+
+    /**
+     * 打开代理
+     *
+     * @param isGlobalSet 是否全局设置
+     * @param host        代理服务器地址
+     * @param port        代理服务器端口
+     */
+    public JavaHttpRequester turnOnProxy(boolean isGlobalSet, String host, int port) {
+        if (StringUtils.isBlank(host)) {
+            throw new IllegalArgumentException("proxy host is null");
+        }
+        if (port < 0 || port > 65535) {
+            throw new IllegalArgumentException("proxy port of host is out of range [0-65535], actual value: " + port);
+        }
+        if (isGlobalSet) {
+            System.setProperty("http.proxySet", "true");
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port + "");
+            System.setProperty("https.proxyHost", host);
+            System.setProperty("https.proxyPort", port + "");
+        } else {
+            SocketAddress sa = new InetSocketAddress(host, port);
+            proxy = new Proxy(Proxy.Type.HTTP, sa);
+        }
+        return this;
+    }
+
+    public JavaHttpRequester turnOnProxy(String host, int port) {
+        return turnOnProxy(false, host, port);
+    }
+
+    /**
+     * 设置用Fiddler监听java的请求
+     *
+     * @see <a href="https://www.telerik.com/fiddler/fiddler-classic">Fiddler Website</a>
+     */
+    public JavaHttpRequester setFiddlerProxy() {
+        System.out.println("============ Set default Fiddler settings for java application ============");
+        System.setProperty("proxySet", "true");
+        System.setProperty("proxyPort", "8888");
+        System.setProperty("proxyHost", "127.0.0.1");
+        return this;
+    }
+
+    //========================================== ↓↓↓↓↓↓ main method ↓↓↓↓↓↓ ==========================================
+
+    public Response doRequest(Request request) throws HttpRequestException {
+        try {
+            checkParams(request);
+            //确定contentType
+            String contentType = determineContentType(request);
+            //准备最终url
+            String urlPath = prepareUrl(request);
+            URL url = new URL(urlPath);
+            //打开连接
+            HttpURLConnection conn = (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
+            //公共的请求头设置
+            setCommonConnOptions(conn, contentType, request);
+            //如果是https必要的处理
+            if (HttpUtils.isHttpsProtocol(url)) {
+                HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
+                httpsConn.setSSLSocketFactory(createSSLSocketFactory(request));//设置SSL
+            }
+            //开始输出请求体
+            if (requestBodyHandler != null) {
+                requestBodyHandler.handleOutput(conn, request);
+            }
+            //接收响应
+            int responseCode = conn.getResponseCode();//获取返回的状态码，此处会阻塞直到有响应或超时
+            Response response = new Response();
+            response.setRequestUrl(urlPath);
+            response.setHttpMethod(request.getHttpMethod());
+            response.setResponseCode(responseCode);
+            response.setAcceptCharset(request.getAcceptCharset());
+            response.setContentEncoding(conn.getContentEncoding());
+            response.setContentLength(conn.getContentLengthLong());
+            response.setContentType(conn.getContentType());
+            response.setHeaders(HttpUtils.transformURLConnHeaders(conn.getHeaderFields()));
+            response.setConnObj(conn);
+            if (responseCode >= 200 && responseCode < 300) {
+                //处理响应体
+                if (responseBodyHandler != null) {
+                    responseBodyHandler.handleInput(conn, response, request);
+                }
+                //成功后的响应回调
+                if (request.getResponseSuccessListener() != null) {
+                    request.getResponseSuccessListener().handle(response, request);
+                }
+            } else {
+                //失败后的响应回调
+                if (request.getResponseFailureListener() != null) {
+                    request.getResponseFailureListener().handle(response, request);
+                }
+            }
+            return response;
+        } catch (Exception e) {
+            if (executeErrorHandler != null) {
+                executeErrorHandler.handle(request, e);
+            }
+            throw new HttpRequestException(e);
+        }
+    }
+
+    //========================================== ↓↓↓↓↓↓ private methods ↓↓↓↓↓↓ ==========================================
+
+    protected void checkParams(Request request) throws IllegalArgumentException {
+        if (request == null) {
+            throw new IllegalArgumentException("argument request can not be null");
+        }
+        if (StringUtils.isBlank(request.getUrlPath())) {
+            throw new IllegalArgumentException("urlPath can not be blank");
+        }
+        if (request.getRequestDataMode() == null) {
+            request.setRequestDataMode(RequestDataMode.NONE);
+        }
+        if (request.getResponseDataMode() == null) {
+            request.setResponseDataMode(ResponseDataMode.DEFAULT);
+        }
+    }
 
     /**
      * 明确请求的contentType
@@ -160,90 +280,12 @@ public class JavaHttpRequester implements HttpRequester {
      */
     protected SSLSocketFactory createSSLSocketFactory(Request request)
             throws Exception {
-        SSLContextInitializer sslContextInitializer = request.getSslContextInitializer();
         if (sslContextInitializer == null) {
             sslContextInitializer = SSLContextInitializer.DEFAULT;
         }
-        SSLContext sslContext = sslContextInitializer.build(request.getTrustManagers(), request.getTlsProtocol());
+        SSLContext sslContext = sslContextInitializer.build(trustManagers, request.getTlsProtocol());
         //从上述SSLContext对象中得到SSLSocketFactory对象
         return sslContext.getSocketFactory();
-    }
-
-    /**
-     * 输出请求内容（请求体）
-     */
-    protected void outputRequestContent(HttpURLConnection conn, Request request) throws IOException {
-        if (request.isContentEmpty() || request.getHttpMethod() == HttpMethod.GET || request.getHttpMethod() == HttpMethod.HEAD) {
-            return;
-        }
-        try (OutputStream out = conn.getOutputStream()) {
-            if (request.getRequestDataMode() == RequestDataMode.UPLOAD_FILE) {
-                //上传文件
-                HttpFileUtils.build().uploadFiles(
-                        conn,
-                        request.getFormData(),
-                        request.getUploadFiles(),
-                        request.getRequestCharset(),
-                        request.getFileBufferSize(),
-                        request.getUploadListener()
-                );
-            } else if (request.getRequestDataMode() != RequestDataMode.NONE) {
-                //其他上传方式
-                byte[] requestContent = request.getData();
-                if (requestContent != null) {
-                    //将数据输出
-                    out.write(requestContent);
-                }
-            }
-        }
-    }
-
-    /**
-     * 处理响应内容
-     */
-    protected void handleResponseContent(HttpURLConnection conn, Response response, Request request) throws IOException {
-        if (request.getResponseDataMode() == null) {
-            request.setResponseDataMode(ResponseDataMode.DEFAULT);
-        }
-        response.setResponseDataMode(request.getResponseDataMode());
-        //处理响应数据
-        if (request.getResponseDataMode() == ResponseDataMode.DEFAULT) {
-            //从input流读取字节数据
-            try (InputStream in = conn.getInputStream()) {
-                InputStreamWrapper wrapper = null;
-                if (StringUtils.isNotBlank(response.getContentEncoding()) && response.getContentEncoding().equalsIgnoreCase("gzip")) {
-                    //响应体为gzip压缩
-                    wrapper = InputStreamWrapper.GZIP;
-                }
-                byte[] data = StreamParser.build().read(in, wrapper);
-                response.setData(data);
-            }
-        } else if (request.getResponseDataMode() == ResponseDataMode.STREAM_ONLY) {
-            //直接返回input流
-            InputStream in = null;
-            try {
-                in = conn.getInputStream();
-                response.setDataStream(conn.getInputStream());
-            } catch (IOException e) {
-                if (in != null) {
-                    in.close();
-                }
-                throw new IOException(e);
-            }
-        } else if (request.getResponseDataMode() == ResponseDataMode.DOWNLOAD) {
-            //下载
-            File downloadFile = HttpFileUtils.build().downloadFile(
-                    request.getDownloadFilePath(),
-                    conn.getInputStream(),
-                    response.getContentLength(),
-                    request.getFileBufferSize(),
-                    request.isDownloadAutoSuffix(),
-                    response.getContentType(),
-                    request.getDownloadListener()
-            );
-            response.setDownloadFile(downloadFile);
-        }
-        //responseDataMode是NONE则无作为直接返回
     }
 
 }

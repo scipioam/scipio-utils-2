@@ -22,14 +22,25 @@ public interface DownloadListener {
     }
 
     /**
+     * 下载成功时
+     */
+    default void onSuccess(File outputFile) {
+    }
+
+    /**
+     * 下载失败时
+     */
+    default void onError(File outputFile, Throwable e) {
+    }
+
+
+    /**
      * 下载完成时
      *
      * @param isSuccess  是否下载成功，为true代表成功
      * @param outputFile 输出下载的文件
-     * @param e          如果下载失败，则此项不为null
      */
-    default void onFinished(boolean isSuccess, File outputFile, Exception e) {
-        System.out.println("Download finished, Success: " + isSuccess + ", File: " + outputFile.getAbsolutePath());
+    default void onFinished(boolean isSuccess, File outputFile) {
     }
 
 }

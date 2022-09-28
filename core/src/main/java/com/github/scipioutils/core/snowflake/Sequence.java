@@ -3,6 +3,9 @@ package com.github.scipioutils.core.snowflake;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Enumeration;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
@@ -41,54 +44,70 @@ import java.util.regex.Pattern;
  * 2.机器id的分配和回收问题
  * 3.机器id的上限问题
  *
- * <p>
- * <a href="https://gitee.com/yu120/sequence">来源(码云)</a><br/>
- * <a href="https://github.com/yu120/neural">来源(Github)</a>
- * </p>
- *
  * @author lry
+ * @author Alan Scipio
  * @version 3.0
+ * @see <a href="https://gitee.com/yu120/sequence">来源(码云)</a>
+ * @see <a href="https://github.com/yu120/neural">来源(Github)</a>
  */
 class Sequence {
 
     /**
      * 时间起始标记点，作为基准，一般取系统的最近时间（一旦确定不能变动）
      */
-    private final long twepoch = 1519740777809L;
+    private long twepoch;
 
     /**
-     * 5位的机房id
+     * 时间戳的bit位数，标准为41位
      */
-    private final long datacenterIdBits = 5L;
-    /**
-     * 5位的机器id
-     */
-    private final long workerIdBits = 5L;
-    /**
-     * 每毫秒内产生的id数: 2的12次方个
-     */
-    private final long sequenceBits = 12L;
+    private long timestampBits;
 
-    protected final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
-    protected final long maxWorkerId = -1L ^ (-1L << workerIdBits);
+    /**
+     * 机房id的bit位数，标准为5位
+     */
+    private long datacenterIdBits;
 
-    private final long workerIdShift = sequenceBits;
-    private final long datacenterIdShift = sequenceBits + workerIdBits;
+    /**
+     * 机器id的bit位数，标准为5位
+     */
+    private long workerIdBits;
+
+    /**
+     * 序列号的bit位数，即每毫秒内产生的id数，标准为2的12次方个
+     */
+    private long sequenceBits;
+
+    protected long maxDatacenterId;
+    protected long maxWorkerId;
+
+    private long workerIdShift;
+    private long datacenterIdShift;
 
     /**
      * 时间戳左移动位
      */
-    private final long timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
-    private final long sequenceMask = -1L ^ (-1L << sequenceBits);
+    private long timestampLeftShift;
+
+    /**
+     * 序列号掩码
+     */
+    private long sequenceMask;
+
+    /**
+     * 时间戳掩码
+     */
+    private long timestampMask;
 
     /**
      * 所属机房id
      */
     private final long datacenterId;
+
     /**
      * 所属机器id
      */
     private final long workerId;
+
     /**
      * 并发控制序列
      */
@@ -120,9 +139,32 @@ class Sequence {
         if (datacenterId > maxDatacenterId || datacenterId < 0) {
             throw new IllegalArgumentException(String.format("Datacenter Id can't be greater than %d or less than 0", maxDatacenterId));
         }
-
         this.workerId = workerId;
         this.datacenterId = datacenterId;
+    }
+
+    /**
+     * {@link SequenceBuilder}专用：初始化自定义的基础设定
+     *
+     * @param tsepoch          起始时间
+     * @param timestampBits    时间戳的bit位数
+     * @param datacenterIdBits dataCenterId的bit位数
+     * @param workerIdBits     workerId的bit位数
+     * @param sequenceBits     序列号的bit位数
+     */
+    void init(long tsepoch, long timestampBits, long datacenterIdBits, long workerIdBits, long sequenceBits) {
+        this.twepoch = tsepoch;
+        this.timestampBits = timestampBits;
+        this.datacenterIdBits = datacenterIdBits;
+        this.workerIdBits = workerIdBits;
+        this.sequenceBits = sequenceBits;
+        maxDatacenterId = ~(-1L << datacenterIdBits);
+        maxWorkerId = ~(-1L << workerIdBits);
+        workerIdShift = sequenceBits;
+        datacenterIdShift = sequenceBits + workerIdBits;
+        timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
+        sequenceMask = ~(-1L << sequenceBits);
+        timestampMask = ~(-1L << timestampBits);
     }
 
     /**
@@ -208,8 +250,9 @@ class Sequence {
 
         lastTimestamp = timestamp;
 
+        long timePart = (timestamp - twepoch) & timestampMask;
         // 时间戳部分 | 数据中心部分 | 机器标识部分 | 序列号部分
-        return ((timestamp - twepoch) << timestampLeftShift)
+        return (timePart << timestampLeftShift)
                 | (datacenterId << datacenterIdShift)
                 | (workerId << workerIdShift)
                 | sequence;
@@ -226,6 +269,14 @@ class Sequence {
 
     protected long timeGen() {
         return SystemClock.INSTANCE.currentTimeMillis();
+    }
+
+    public LocalDateTime getStartEpoch() {
+        return Instant.ofEpochMilli(twepoch).atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
+    public long getTotalBits() {
+        return (timestampBits + datacenterIdBits + workerIdBits + sequenceBits + 1);
     }
 
     /**

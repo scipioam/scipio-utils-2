@@ -35,9 +35,15 @@ public interface SSLContextInitializer {
      * 默认SSLContext创建者
      */
     SSLContextInitializer DEFAULT = (trustManagers, protocol) -> {
-        // 支持TLSv1.3协议的依赖注册到提供者中
+        String finalProtocol;
+        // 将支持TLSv1.3协议的第三方库注册到提供者中 (低于Java11的版本必需要第三方库提供支持)
         Security.addProvider(new OpenJSSE());
-        String finalProtocol = StringUtils.isBlank(protocol) ? "TLSv1.2" : protocol;
+        if (StringUtils.isBlank(protocol)) {
+            finalProtocol = "TLSv1.2";
+         } else {
+            //调用者的自定义
+            finalProtocol = protocol;
+        }
         SSLContext sslContext = SSLContext.getInstance(finalProtocol);
         sslContext.init(null, trustManagers, new SecureRandom());
         return sslContext;

@@ -3,6 +3,7 @@ package com.github.scipioutils.core.net.http.def;
 import com.github.scipioutils.core.StringUtils;
 import com.github.scipioutils.core.net.mime.ApplicationType;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.File;
 import java.io.InputStream;
@@ -18,6 +19,7 @@ import java.util.Map;
  * Create Date: 2020/9/24
  */
 @Data
+@Accessors(chain = true)
 public class Response {
 
     /**
@@ -109,9 +111,9 @@ public class Response {
     }
 
     public String getHeader(String key) {
-        if (headers == null)
+        if (headers == null) {
             return null;
-
+        }
         return headers.get(key);
     }
 

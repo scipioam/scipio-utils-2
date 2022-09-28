@@ -4,6 +4,7 @@ import com.github.scipioutils.core.StringUtils;
 import com.github.scipioutils.core.net.http.listener.DownloadListener;
 import com.github.scipioutils.core.net.http.listener.FileUploadListener;
 import com.github.scipioutils.core.net.http.listener.UploadListener;
+import com.github.scipioutils.core.net.mime.MimeType;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -55,21 +56,13 @@ public class HttpFileUtils {
         String finalFilePath = outputFilePath;
         //自动根据contentType生成后缀
         if (downloadAutoSuffix && StringUtils.isNotNull(contentType)) {
-            String extension;
-            if (contentType.equalsIgnoreCase("text/plain")) {
-                extension = ".txt";
-            } else if (contentType.contains(";")) {
-                String finalContentType = contentType.split(";")[0];
-                extension = "." + finalContentType.split("/")[1];
-            } else {
-                extension = "";
-            }
-            System.out.println("Auto match file extension by Content-Type: [" + extension + "]");
+            String extension = MimeType.getFileExtensionByContentType(contentType);
+//            System.out.println("Auto match file extension by Content-Type: [" + extension + "]");
             finalFilePath = outputFilePath + extension;
         }
         File outputFile = new File(finalFilePath);
 
-        Exception ee = null;
+        Exception ee;
         boolean isSuccess = false;
         BufferedInputStream bis = null;
         FileOutputStream fos = null;
@@ -86,14 +79,19 @@ public class HttpFileUtils {
                 if (downloadListener != null) {
                     //计算下载进度
                     readLength += length;
-                    int progress = 0;
-                    progress = (int) (100L * readLength / contentLength);
+                    int progress = (int) (100L * readLength / contentLength);
                     downloadListener.onDownloading(contentLength, readLength, progress);
                 }
             }
             isSuccess = true;
+            if (downloadListener != null) {
+                downloadListener.onSuccess(outputFile);
+            }
         } catch (Exception e) {
             ee = e;
+            if (downloadListener != null) {
+                downloadListener.onError(outputFile, ee);
+            }
         } finally {
             try {
                 if (bis != null) bis.close();
@@ -110,7 +108,7 @@ public class HttpFileUtils {
         }
         //下载结束时的回调
         if (downloadListener != null) {
-            downloadListener.onFinished(isSuccess, outputFile, ee);
+            downloadListener.onFinished(isSuccess, outputFile);
         }
         return outputFile;
     }
@@ -303,7 +301,7 @@ public class HttpFileUtils {
         try {
             String[] arr = file.getName().split("\\.");
             String extension = arr[arr.length - 1];
-            //TODO 待完成，需要靠MimeType
+           return MimeType.getContentTypeByFileExtension(extension);
         } catch (Exception e) {
             e.printStackTrace();
         }

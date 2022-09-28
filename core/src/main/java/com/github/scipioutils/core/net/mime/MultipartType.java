@@ -7,32 +7,40 @@ import com.github.scipioutils.core.AssertUtils;
  */
 public enum MultipartType implements MimeType{
 
-    ALTERNATIVE(""),
-    APPLEDOUBLE("multipart/appledouble"),
-    BYTERANGES("multipart/byteranges"),
-    DIGEST(""),
-    ENCRYPTED("multipart/encrypted"),
-    EXAMPLE("multipart/example"),
-    FORM_DATA("multipart/form-data"),
-    HEADER_SET("multipart/header-set"),
-    MIXED(""),
-    MULTILINGUAL("multipart/multilingual"),
-    PARALLEL(""),
-    RELATED("multipart/related"),
-    REPORT("multipart/report"),
-    SIGNED("multipart/signed"),
-    VND$BINT$MED_PLUS("multipart/vnd.bint.med-plus"),
-    VOICE_MESSAGE("multipart/voice-message"),
-    X_MIXED_REPLACE("multipart/x-mixed-replace");
+    ALTERNATIVE("",  ""),
+    APPLEDOUBLE("multipart/appledouble",  ""),
+    BYTERANGES("multipart/byteranges",  ""),
+    DIGEST("",  ""),
+    ENCRYPTED("multipart/encrypted",  ""),
+    EXAMPLE("multipart/example",  ""),
+    FORM_DATA("multipart/form-data",  ""),
+    HEADER_SET("multipart/header-set",  ""),
+    MIXED("",  ""),
+    MULTILINGUAL("multipart/multilingual",  ""),
+    PARALLEL("",  ""),
+    RELATED("multipart/related",  ""),
+    REPORT("multipart/report",  ""),
+    SIGNED("multipart/signed",  ""),
+    VND$BINT$MED_PLUS("multipart/vnd.bint.med-plus",  ""),
+    VOICE_MESSAGE("multipart/voice-message",  ""),
+    X_MIXED_REPLACE("multipart/x-mixed-replace",  "");
 
     private final String template;
+    private final String fileExtension;
 
-    MultipartType(String template) {
+    MultipartType(String template, String fileExtension) {
         this.template = template;
+        this.fileExtension = fileExtension;
     }
 
+    @Override
     public String getTemplate() {
         return this.template;
+    }
+
+    @Override
+    public String getFileExtension() {
+        return fileExtension;
     }
 
     @Override

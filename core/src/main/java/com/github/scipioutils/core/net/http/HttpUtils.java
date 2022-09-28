@@ -1,8 +1,6 @@
 package com.github.scipioutils.core.net.http;
 
 import com.github.scipioutils.core.AssertUtils;
-import com.github.scipioutils.core.StringUtils;
-import com.github.scipioutils.core.net.http.listener.DownloadListener;
 
 import java.io.*;
 import java.net.URL;

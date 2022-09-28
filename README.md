@@ -1,1 +1,7 @@
-# scipio-utils-2
+# Scipio Utils 2
+
+***
+
+### Requirement  
+
+- JDK 8+

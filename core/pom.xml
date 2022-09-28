@@ -12,12 +12,4 @@
 
     <artifactId>scipio-utils-core</artifactId>
 
-    <dependencies>
-        <!-- OpenJSSE (为了JDK8时支持TLSv1.3) -->
-        <dependency>
-            <groupId>org.openjsse</groupId>
-            <artifactId>openjsse</artifactId>
-        </dependency>
-    </dependencies>
-
 </project>

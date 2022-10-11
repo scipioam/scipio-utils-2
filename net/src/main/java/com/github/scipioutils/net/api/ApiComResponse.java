@@ -1,8 +1,10 @@
 package com.github.scipioutils.net.api;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.InputStream;
+import java.util.LinkedHashMap;
 
 /**
  * API响应结果 - 通用版
@@ -10,11 +12,17 @@ import lombok.ToString;
  * @author Alan Scipio
  * create date: 2022/9/28
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-public class ApiComResponse extends ApiResponse{
+public class ApiComResponse extends LinkedHashMap<String, Object> implements ApiResponse{
 
+    @Getter @Setter
+    private int httpResponseCode;
 
+    @Getter
+    private InputStream responseStream;
+
+    @Override
+    public void setResponseStream(InputStream in) {
+        this.responseStream = in;
+    }
 
 }

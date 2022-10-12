@@ -15,7 +15,7 @@ import java.util.Map;
 public class AliyunSimpleSignature extends AliyunSignature{
 
     @Override
-    public String calc(ApiRequest apiRequest, Map<String, String> authorizationInfos, Request request) {
+    public String sign(ApiRequest apiRequest, Map<String, String> authorizationInfos, Request request) {
         if (authorizationInfos == null || authorizationInfos.size() == 0) {
             throw new IllegalArgumentException("aliyun simple signature (APPCODE) is null");
         }

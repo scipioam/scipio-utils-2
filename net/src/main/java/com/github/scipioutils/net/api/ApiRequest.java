@@ -71,7 +71,7 @@ public class ApiRequest {
         }
         //安全验证
         if (signature != null) {
-            String authorizationValue = signature.calc(this, authorizationInfos, request);
+            String authorizationValue = signature.sign(this, authorizationInfos, request);
             String authorizationKey = signature.getAuthorizationKey();
             request.addHeader(authorizationKey, authorizationValue);
         }
@@ -93,6 +93,15 @@ public class ApiRequest {
     public ApiRequest setFormData(Map<String, String> formData) {
         requestDataMode = RequestDataMode.FORM;
         this.formData = formData;
+        return this;
+    }
+
+    public ApiRequest addFormData(String key, String value) {
+        requestDataMode = RequestDataMode.FORM;
+        if (formData == null) {
+            formData = new HashMap<>();
+        }
+        formData.put(key, value);
         return this;
     }
 

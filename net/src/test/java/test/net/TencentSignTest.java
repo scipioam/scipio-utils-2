@@ -1,5 +1,6 @@
 package test.net;
 
+import com.github.scipioutils.net.api.*;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.Mac;
@@ -52,7 +53,7 @@ public class TencentSignTest {
      */
     @Test
     public void testDemo() throws Exception {
-        TreeMap<String, Object> params = new TreeMap<String, Object>(); // TreeMap可以自动排序
+        TreeMap<String, Object> params = new TreeMap<>(); // TreeMap可以自动排序
         // 实际调用时应当使用随机数，例如：params.put("Nonce", new Random().nextInt(java.lang.Integer.MAX_VALUE));
         params.put("Nonce", 11886); // 公共参数
         // 实际调用时应当使用系统当前时间，例如：   params.put("Timestamp", System.currentTimeMillis() / 1000);
@@ -67,8 +68,40 @@ public class TencentSignTest {
         params.put("Signature", sign(getStringToSign(params), "Gu5t9xGARNpq86cd98joQYCN3*******", "HmacSHA1")); // 公共参数
         System.out.println("url: " + getUrl(params));
         System.out.println("----------------------------------------------");
-        for(Map.Entry<String,Object> entry : params.entrySet()) {
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
+    }
+
+    @Test
+    public void test0() {
+        ApiRequest request = new ApiRequest()
+                .setUrlPath("http://service-3k8gkc1x-1255468759.sh.apigw.tencentcs.com/release/outland_epidemic")
+                .setSignature(new TencentMarketSignature())
+                .addAuthorizationInfo(TencentSignature.SECRET_ID, "")
+                .addAuthorizationInfo(TencentSignature.SECRET_KEY, "")
+                .addFormData("country", "United States of America")
+                .addFormData("date", "20220930");
+        ApiClient client = new ApiClient();
+
+        System.out.println("Start to request...");
+        ApiMapResponse response = client.get(request);
+        System.out.println("request finished, http response code: " + response.getHttpResponseCode());
+        System.out.println("-------------------------------------------------------");
+        System.out.println("response headers:");
+        for (Map.Entry<String, String> entry : response.getResponseHeaders().entrySet()) {
+            System.out.println("[" + entry.getKey() + "] : [" + entry.getValue() + "]");
+        }
+        System.out.println("-------------------------------------------------------");
+        if (response.isHttpSuccess()) {
+            System.out.println("response body:");
+            System.out.println(response.getOrigStrData());
+            System.out.println("forEach result:");
+            response.each((index, key, value) -> {
+                if (!(value instanceof Map)) {
+                    System.out.println("[" + index + "] key[" + key + "] value[" + value + "]");
+                }
+            });
         }
     }
 

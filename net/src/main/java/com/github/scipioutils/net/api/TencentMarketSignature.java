@@ -18,10 +18,8 @@ import java.util.TimeZone;
  */
 public class TencentMarketSignature extends TencentSignature {
 
-    //TODO 待测试
-
     @Override
-    public String calc(ApiRequest apiRequest, Map<String, String> authorizationInfos, Request request) throws Exception {
+    public String sign(ApiRequest apiRequest, Map<String, String> authorizationInfos, Request request) throws Exception {
         if (authorizationInfos == null || authorizationInfos.size() == 0) {
             throw new IllegalArgumentException("aliyun simple signature (APPCODE) is null");
         }
@@ -29,7 +27,7 @@ public class TencentMarketSignature extends TencentSignature {
         if (StringUtils.isBlank(secretKey)) {
             throw new IllegalArgumentException("tencent market signature (secretKey) is blank");
         }
-        String secretId = authorizationInfos.get(SECRET_KEY);
+        String secretId = authorizationInfos.get(SECRET_ID);
         if (StringUtils.isBlank(secretId)) {
             throw new IllegalArgumentException("tencent market signature (secretId) is blank");
         }

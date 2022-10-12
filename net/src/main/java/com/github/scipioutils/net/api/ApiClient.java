@@ -52,8 +52,14 @@ public class ApiClient {
                 } else {
                     if (origResponse.getContentType().toLowerCase().contains(ApplicationType.JSON.getTemplate())) {
                         //解析返回的json数据
-                        T apiResponse = JacksonUtils.fromJson(origResponse.getStrData(), responseType);
+                        String strData = origResponse.getStrData();
+                        T apiResponse = JacksonUtils.fromJson(strData, responseType);
                         apiResponse.setHttpResponseCode(origResponse.getResponseCode());
+                        apiResponse.setResponseHeaders(origResponse.getHeaders());
+                        if (apiResponse instanceof ApiMapResponse) {
+                            ApiMapResponse acr = (ApiMapResponse) apiResponse;
+                            acr.setOrigStrData(strData);
+                        }
                         return apiResponse;
                     } else if (origResponse.getContentType().toLowerCase().contains(ApplicationType.XML.getTemplate())) {
                         //TODO 解析返回的xml数据
@@ -66,6 +72,7 @@ public class ApiClient {
                 T apiResponse = Objects.requireNonNull(responseType).getDeclaredConstructor().newInstance();
                 apiResponse.setHttpResponseCode(origResponse.getResponseCode());
                 apiResponse.setResponseStream(origResponse.getDataStream());
+                apiResponse.setResponseHeaders(origResponse.getHeaders());
                 return apiResponse;
             } else {
                 return null;
@@ -79,8 +86,8 @@ public class ApiClient {
         }
     }
 
-    public ApiComResponse doRequest(ApiRequest apiRequest) throws HttpRequestException {
-        return doRequest(apiRequest, ApiComResponse.class);
+    public ApiMapResponse doRequest(ApiRequest apiRequest) throws HttpRequestException {
+        return doRequest(apiRequest, ApiMapResponse.class);
     }
 
     public <T extends ApiResponse> T get(ApiRequest apiRequest, Class<T> responseType) {
@@ -88,8 +95,8 @@ public class ApiClient {
         return doRequest(apiRequest, responseType);
     }
 
-    public ApiComResponse get(ApiRequest apiRequest) throws HttpRequestException {
-        return get(apiRequest, ApiComResponse.class);
+    public ApiMapResponse get(ApiRequest apiRequest) throws HttpRequestException {
+        return get(apiRequest, ApiMapResponse.class);
     }
 
     public <T extends ApiResponse> T post(ApiRequest apiRequest, Class<T> responseType) {
@@ -97,8 +104,8 @@ public class ApiClient {
         return doRequest(apiRequest, responseType);
     }
 
-    public ApiComResponse post(ApiRequest apiRequest) throws HttpRequestException {
-        return post(apiRequest, ApiComResponse.class);
+    public ApiMapResponse post(ApiRequest apiRequest) throws HttpRequestException {
+        return post(apiRequest, ApiMapResponse.class);
     }
 
     //TODO 上传文件的功能待开发

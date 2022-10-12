@@ -46,6 +46,15 @@ public class ApiRequest {
     private Map<String, String> formData;
 
     /**
+     * 自定义请求头
+     */
+    private Map<String, String> headers;
+
+    public static ApiRequest create() {
+        return new ApiRequest();
+    }
+
+    /**
      * 构造最终的请求数据
      */
     Request buildRequestData() throws Exception {
@@ -71,10 +80,12 @@ public class ApiRequest {
         }
         //安全验证
         if (signature != null) {
-            String authorizationValue = signature.sign(this, authorizationInfos, request);
+            String authorizationValue = signature.sign(this, authorizationInfos);
             String authorizationKey = signature.getAuthorizationKey();
-            request.addHeader(authorizationKey, authorizationValue);
+            addHeader(authorizationKey, authorizationValue);
         }
+        //自定义请求头
+        request.setHeaders(headers);
         return request;
     }
 
@@ -121,6 +132,24 @@ public class ApiRequest {
         if (authorizationInfos != null) {
             authorizationInfos.clear();
         }
+    }
+
+    public ApiRequest addHeader(String key, String value) {
+        if (StringUtils.isBlank(key)) {
+            return this;
+        }
+        if (headers == null) {
+            headers = new HashMap<>();
+        }
+        headers.put(key, value);
+        return this;
+    }
+
+    public String getHeader(String key) {
+        if (headers == null) {
+            return null;
+        }
+        return headers.get(key);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.github.scipioutils.net.api;
 
 import com.github.scipioutils.core.StringUtils;
-import com.github.scipioutils.net.http.def.Request;
 
 import java.util.Map;
 
@@ -15,7 +14,7 @@ import java.util.Map;
 public class AliyunSimpleSignature extends AliyunSignature{
 
     @Override
-    public String sign(ApiRequest apiRequest, Map<String, String> authorizationInfos, Request request) {
+    public String sign(ApiRequest apiRequest, Map<String, String> authorizationInfos) {
         if (authorizationInfos == null || authorizationInfos.size() == 0) {
             throw new IllegalArgumentException("aliyun simple signature (APPCODE) is null");
         }

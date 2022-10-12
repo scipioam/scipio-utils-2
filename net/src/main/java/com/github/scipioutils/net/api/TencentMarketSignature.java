@@ -1,7 +1,6 @@
 package com.github.scipioutils.net.api;
 
 import com.github.scipioutils.core.StringUtils;
-import com.github.scipioutils.net.http.def.Request;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -19,7 +18,7 @@ import java.util.TimeZone;
 public class TencentMarketSignature extends TencentSignature {
 
     @Override
-    public String sign(ApiRequest apiRequest, Map<String, String> authorizationInfos, Request request) throws Exception {
+    public String sign(ApiRequest request, Map<String, String> authorizationInfos) throws Exception {
         if (authorizationInfos == null || authorizationInfos.size() == 0) {
             throw new IllegalArgumentException("aliyun simple signature (APPCODE) is null");
         }

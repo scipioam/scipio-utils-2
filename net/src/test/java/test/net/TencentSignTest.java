@@ -75,13 +75,13 @@ public class TencentSignTest {
 
     @Test
     public void test0() {
-        ApiRequest request = new ApiRequest()
+        ApiRequest request = ApiRequest.create()
                 .setUrlPath("http://service-3k8gkc1x-1255468759.sh.apigw.tencentcs.com/release/outland_epidemic")
                 .setSignature(new TencentMarketSignature())
-                .addAuthorizationInfo(TencentSignature.SECRET_ID, "")
-                .addAuthorizationInfo(TencentSignature.SECRET_KEY, "")
+                .addAuthorizationInfo(TencentSignature.SECRET_ID, "AKIDduDdl5UOn59yo6srSo38iEZGlulErl3hTBbO")
+                .addAuthorizationInfo(TencentSignature.SECRET_KEY, "bEQn08aPmJKJDgHRr070KHZ8MdXy9N3pa4zAo0yE")
                 .addFormData("country", "United States of America")
-                .addFormData("date", "20220930");
+                .addFormData("date", "20220929");
         ApiClient client = new ApiClient();
 
         System.out.println("Start to request...");

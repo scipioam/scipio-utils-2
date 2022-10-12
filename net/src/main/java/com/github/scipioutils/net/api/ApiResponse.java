@@ -11,13 +11,7 @@ import java.util.Map;
  */
 public interface ApiResponse {
 
-    int getHttpResponseCode();
-
     void setHttpResponseCode(int httpResponseCode);
-
-    default Map<String, String> getResponseHeaders() {
-        return null;
-    }
 
     default void setResponseHeaders(Map<String, String> headers) {
     }

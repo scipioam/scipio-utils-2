@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.scipio-am</groupId>
+    <groupId>com.github.scipioam</groupId>
     <artifactId>scipio-utils-2</artifactId>
     <version>2.0.0</version>
     <modules>
@@ -33,7 +33,7 @@
         <dependencies>
             <!--======================================== 本项目内部依赖 ========================================-->
             <dependency>
-                <groupId>com.github.scipio-am</groupId>
+                <groupId>com.github.scipioam</groupId>
                 <artifactId>scipio-utils-core</artifactId>
                 <version>${project.version}</version>
             </dependency>

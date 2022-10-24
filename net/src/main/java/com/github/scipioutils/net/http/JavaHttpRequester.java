@@ -12,10 +12,8 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import java.io.*;
 import java.net.*;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * HTTP client based on original Java
@@ -130,14 +128,7 @@ public class JavaHttpRequester implements HttpRequester {
             //确定contentType
             String contentType = determineContentType(request);
             //准备最终url
-            URL url;
-            if (request.getUrl() == null) {
-                String urlPath = prepareUrl(request);
-                url = new URL(urlPath);
-                request.setUrl(url);
-            } else {
-                url = request.getUrl();
-            }
+            URL url = request.getFinalUrl();
             //打开连接
             HttpURLConnection conn = (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
             //公共的请求头设置
@@ -223,29 +214,6 @@ public class JavaHttpRequester implements HttpRequester {
             }
         }
         return contentType;
-    }
-
-    /**
-     * 准备最终的url
-     */
-    protected String prepareUrl(Request request) throws UnsupportedEncodingException {
-        String currentUrl = request.getUrlPath();
-        if (request.isContentEmpty() || (request.getHttpMethod() != HttpMethod.GET && request.getHttpMethod() != HttpMethod.HEAD)) {
-            return currentUrl;
-        }
-        //为get方法拼接参数
-        if (request.getRequestDataMode() == RequestDataMode.FORM) {
-            currentUrl = HttpUtils.getUrlWithParams(request.getUrlPath(), request.getFormData(), request.getRequestCharset());
-        } else if (request.getRequestDataMode() == RequestDataMode.TEXT_PLAIN) {
-            String regex = "((\\w+=?)(\\w*)&?)+";
-            if (!Pattern.matches(regex, request.getStrData())) {
-                throw new IllegalArgumentException("Invalid request params when using GET method");
-            }
-            currentUrl += ("?" + request.getStrData());
-        } else {
-            throw new IllegalArgumentException("Invalid requestDataMode when using GET method! requestDataMode: [" + request.getRequestDataMode().name() + "]");
-        }
-        return currentUrl;
     }
 
     /**

@@ -13,9 +13,12 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 请求参数
@@ -270,6 +273,35 @@ public class Request {
             return null;
         }
         return headers.get(key);
+    }
+
+    /**
+     * 准备最终的url
+     */
+    public URL getFinalUrl() throws UnsupportedEncodingException, MalformedURLException {
+        if (url != null) {
+            return url;
+        }
+
+        String currentUrl = urlPath;
+        if (isContentEmpty() || (getHttpMethod() != HttpMethod.GET && getHttpMethod() != HttpMethod.HEAD)) {
+            url = new URL(currentUrl);
+            return url;
+        }
+        //为get方法拼接参数
+        if (getRequestDataMode() == RequestDataMode.FORM) {
+            currentUrl = HttpUtils.getUrlWithParams(getUrlPath(), getFormData(), getRequestCharset());
+        } else if (getRequestDataMode() == RequestDataMode.TEXT_PLAIN) {
+            String regex = "((\\w+=?)(\\w*)&?)+";
+            if (!Pattern.matches(regex, getStrData())) {
+                throw new IllegalArgumentException("Invalid request params when using GET method");
+            }
+            currentUrl += ("?" + getStrData());
+        } else {
+            throw new IllegalArgumentException("Invalid requestDataMode when using GET method! requestDataMode: [" + getRequestDataMode().name() + "]");
+        }
+        url = new URL(currentUrl);
+        return url;
     }
 
 }

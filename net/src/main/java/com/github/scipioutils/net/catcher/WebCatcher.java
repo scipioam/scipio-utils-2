@@ -83,12 +83,12 @@ public class WebCatcher {
 //        System.out.println("httpRequester has been built: " + httpRequester);
         //发起HTTP请求
         Response response;
-        System.out.println("start send http request to [" + request.getUrl().getPath() + "] by " + request.getHttpMethod().value + " method");
+//        System.out.println("start send http request to [" + request.getUrl().toString() + "] by " + request.getHttpMethod().value + " method");
         response = (httpMethod == HttpMethod.GET) ? httpRequester.get(request) : httpRequester.post(request);
         if (!response.isSuccess()) {
             throw new ResponseException("response error code:" + response.getResponseCode(), response);
         }
-        System.out.println("request successfully, http response code:" + response.getResponseCode());
+//        System.out.println("request successfully, http response code:" + response.getResponseCode());
         return response;
     }
 

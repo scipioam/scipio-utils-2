@@ -1,6 +1,8 @@
 package com.github.scipioutils.net.catcher;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Document;
 
@@ -15,6 +17,8 @@ import java.util.List;
  * create date: 2022/10/24
  */
 @Data
+@Accessors(chain = true)
+@NoArgsConstructor
 public class FileIOHandler implements IOHandler {
 
     private String filePath; //文件路径
@@ -22,9 +26,6 @@ public class FileIOHandler implements IOHandler {
     private String fileExtension = "txt"; //文件后缀，默认txt，如不需要后缀则手动set为null
 
     private boolean isAppend = false; //是否为追加，为false则不是追加而是覆盖
-
-    public FileIOHandler() {
-    }
 
     public FileIOHandler(String filePath, String fileName) {
         this.filePath = filePath;

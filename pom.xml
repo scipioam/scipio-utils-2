@@ -58,21 +58,18 @@
                 <groupId>org.openjsse</groupId>
                 <artifactId>openjsse</artifactId>
                 <version>${openjsse.version}</version>
-                <scope>provided</scope>
             </dependency>
             <!-- JSON库：Jackson -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
-                <scope>provided</scope>
             </dependency>
             <!-- Jsoup -->
             <dependency>
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>${jsoup.version}</version>
-                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -3,6 +3,7 @@ package com.github.scipioutils.core.io;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 
 /**
  * 文件操作工具
@@ -110,7 +111,7 @@ public class FileUtils {
      * @throws IOException 写入失败
      */
     public static void writeBytes(File file, byte[] data) throws IOException {
-        try (OutputStream fos = new FileOutputStream(file); OutputStream os = new BufferedOutputStream(fos)) {
+        try (OutputStream fos = Files.newOutputStream(file.toPath()); OutputStream os = new BufferedOutputStream(fos)) {
             os.write(data);
         }
     }
@@ -265,5 +266,46 @@ public class FileUtils {
         writeBytes(filePath, data, DEFAULT_BUFFER_SIZE);
     }
 
+    /**
+     * 查找文件 (深度优先)
+     *
+     * @param rootDir        起始根目录
+     * @param targetFileName 目标文件名
+     * @return 查找到的文件对象，如果查找不到则返回null
+     */
+    public static File search(File rootDir, String targetFileName) throws IOException {
+        if (rootDir == null) {
+            throw new IllegalArgumentException("root dir is null");
+        }
+        if (rootDir.isFile()) {
+            throw new IllegalArgumentException("root dir argument is actually a file: " + rootDir.getPath());
+        }
+        if (!rootDir.exists()) {
+            throw new FileNotFoundException("root dir is not exists: " + rootDir.getPath());
+        }
+
+        File[] files = rootDir.listFiles();
+        if (files == null) {
+            return null;
+        }
+        for (File file : files) {
+            //System.out.println("[" + i + "]" + file.getPath());
+            if (file.getName().equals(targetFileName)) {
+                return file;
+            }
+            if (file.isDirectory()) {
+                File searchFile = search(file, targetFileName);
+                if (searchFile != null) {
+                    return searchFile;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static File search(String rootDir, String targetFileName) throws IOException {
+        File rootDirObj = new File(rootDir);
+        return search(rootDirObj, targetFileName);
+    }
 
 }

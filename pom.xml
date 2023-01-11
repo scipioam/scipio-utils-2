@@ -8,6 +8,7 @@
     <modules>
         <module>core</module>
         <module>net</module>
+        <module>crypto</module>
     </modules>
     <packaging>pom</packaging>
 

@@ -343,17 +343,17 @@ public class FileUtils {
         }
 
         List<Path> files = new ArrayList<>();
-        Files.walk(srcPath).forEach(path -> {
-            if (Files.isRegularFile(path)) {
-                if (filter != null) {
-                    if (filter.accept(srcDirObj, path.getFileName().toString())) {
+        Files.walk(srcPath)
+                .filter(Files::isRegularFile)
+                .forEach(path -> {
+                    if (filter != null) {
+                        if (filter.accept(srcDirObj, path.getFileName().toString())) {
+                            files.add(path);
+                        }
+                    } else {
                         files.add(path);
                     }
-                } else {
-                    files.add(path);
-                }
-            }
-        });
+                });
 
         for (Path file : files) {
             Path relativePath = srcPath.relativize(file);

@@ -3,7 +3,13 @@ package com.github.scipioutils.core.io;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 文件操作工具
@@ -306,6 +312,75 @@ public class FileUtils {
     public static File search(String rootDir, String targetFileName) throws IOException {
         File rootDirObj = new File(rootDir);
         return search(rootDirObj, targetFileName);
+    }
+
+    /**
+     * 批量文件转码
+     *
+     * @param srcDir       源文件夹
+     * @param destDir      目标文件夹（不存在则创建）
+     * @param srcEncoding  源编码
+     * @param destEncoding 目标编码
+     * @param filter       文件过滤器
+     * @throws IOException 目录不存在异常、转码异常
+     */
+    public static void encodingConvert(String srcDir, String destDir, String srcEncoding, String destEncoding, FilenameFilter filter) throws IOException {
+        File srcDirObj = new File(srcDir);
+        if (!srcDirObj.exists()) {
+            throw new FileNotFoundException("srcDir not found: [" + srcDir + "]");
+        }
+
+        Charset srcCharset = Charset.forName(srcEncoding);
+        Charset destCharset = Charset.forName(destEncoding);
+        CharsetEncoder encoder = destCharset.newEncoder();
+        encoder.onMalformedInput(CodingErrorAction.REPLACE);
+        encoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
+
+        Path srcPath = Paths.get(srcDir);
+        Path destPath = Paths.get(destDir);
+        if (!Files.exists(destPath)) {
+            Files.createDirectories(destPath);
+        }
+
+        List<Path> files = new ArrayList<>();
+        Files.walk(srcPath).forEach(path -> {
+            if (Files.isRegularFile(path)) {
+                if (filter != null) {
+                    if (filter.accept(srcDirObj, path.getFileName().toString())) {
+                        files.add(path);
+                    }
+                } else {
+                    files.add(path);
+                }
+            }
+        });
+
+        for (Path file : files) {
+            Path relativePath = srcPath.relativize(file);
+            Path destFile = destPath.resolve(relativePath);
+            Files.createDirectories(destFile.getParent());
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toFile().toPath()), srcCharset));
+                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(destFile.toFile().toPath()), destCharset))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    writer.write(line);
+                    writer.newLine();
+                }
+            }
+        }
+    }
+
+    /**
+     * 批量文件转码
+     *
+     * @param srcDir       源文件夹
+     * @param destDir      目标文件夹（不存在则创建）
+     * @param srcEncoding  源编码
+     * @param destEncoding 目标编码
+     * @throws IOException 目录不存在异常、转码异常
+     */
+    public static void encodingConvert(String srcDir, String destDir, String srcEncoding, String destEncoding) throws IOException {
+        encodingConvert(srcDir, destDir, srcEncoding, destEncoding, null);
     }
 
 }
